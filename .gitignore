@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local configuration
+.env
+
+# Generated data and model artifacts
+data/processed/*
+!data/processed/.gitkeep
+models/*
+!models/.gitkeep
+reports/figures/*
+!reports/figures/.gitkeep
+
+# Raw source data is kept locally
+*.xlsx
+*.xls
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

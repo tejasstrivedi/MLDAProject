@@ -1,0 +1,19 @@
+project:
+  name: day-ahead-feeder-load-forecasting
+  random_seed: 42
+
+data:
+  source: feeder_2023_2025.xlsx
+  sheet: Hourly_Data
+  target: MW(I)
+  feeder_column: Code no of Feeder
+
+periods:
+  development_start: 2023-01-01
+  development_end: 2024-12-31
+  test_start: 2025-01-01
+  test_end: 2025-12-31
+
+forecast:
+  horizon_hours: 24
+  baseline_lag_hours: 168
