@@ -1,30 +1,19 @@
 # Day-Ahead Hourly Load Forecasting for Two 11 kV Feeders
 
-This repository is the project scaffold for comparing Random Forest and XGBoost models for 24-hour-ahead feeder load forecasting.
+This beginner academic project compares Random Forest and XGBoost for forecasting the next 24 hourly feeder-load values.
 
-## Status
-
-The project structure is initialized. Data preparation, analysis, modelling, evaluation, and the dashboard have not yet been implemented.
-
-## Local inputs
-
-- `feeder_2023_2025.xlsx` — synthetic hourly feeder dataset for 2023–2025
-- `readme.txt.txt` — course project guidelines
-
-The Excel dataset is excluded from Git by default. Keep source data private/local unless it is intentionally approved for publication.
-
-## Structure
+## Project files
 
 ```text
-config/                 Project configuration
-data/processed/         Generated modelling datasets
-dashboard/              Streamlit dashboard
-models/                 Serialized trained models
-notebooks/              Numbered analysis notebooks
-reports/figures/         Generated report figures
-src/                     Reusable Python package
-tests/                   Automated tests
+feeder_2023_2025.xlsx    Original synthetic dataset
+project.ipynb            Complete analysis and model-building notebook
+dashboard/app.py         Dashboard, to be completed near the end
+models/                  Saved final model
+README.md                Project description and instructions
+requirements.txt         Required Python packages
 ```
+
+The work will be developed gradually in `project.ipynb`. The original Excel file will remain unchanged.
 
 ## Setup
 
@@ -34,11 +23,13 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-## Planned workflow
+## Workflow
 
-1. Data audit and exploratory analysis
-2. Leakage-safe feature engineering
-3. Temporal validation and weekly persistence baseline
-4. Random Forest and XGBoost tuning
-5. Rolling day-ahead evaluation on 2025
-6. Model comparison, explainability, and dashboard
+1. Understand and check the dataset
+2. Perform basic exploratory analysis
+3. Create calendar and historical-load features
+4. Split the data chronologically
+5. Build a weekly baseline
+6. Train Random Forest and XGBoost
+7. Compare MAE and RMSE
+8. Save the best model and create a simple dashboard

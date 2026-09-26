@@ -15,13 +15,9 @@ venv/
 # Local configuration
 .env
 
-# Generated data and model artifacts
-data/processed/*
-!data/processed/.gitkeep
+# Generated model artifacts
 models/*
 !models/.gitkeep
-reports/figures/*
-!reports/figures/.gitkeep
 
 # Raw source data is kept locally
 *.xlsx
