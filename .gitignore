@@ -23,6 +23,7 @@ models/*
 # Raw source data is kept locally
 *.xlsx
 *.xls
+!feeder_2023_2025.xlsx
 
 # OS/editor files
 .DS_Store
