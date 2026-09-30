@@ -18,6 +18,7 @@ venv/
 # Generated model artifacts
 models/*
 !models/.gitkeep
+!models/final_load_forecasting_bundle.joblib
 
 # Raw source data is kept locally
 *.xlsx
