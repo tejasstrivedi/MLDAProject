@@ -458,7 +458,7 @@ with future_tab:
     first_forecast_date = pd.Timestamp("2026-01-01")
     latest_forecast_date = min(next_upload_date, last_supported_date)
     available_dates = pd.date_range(first_forecast_date, latest_forecast_date, freq="D")
-    control_col_1, control_col_2, control_col_3 = st.columns(3)
+    control_col_1, control_col_2, control_col_3, control_col_4 = st.columns(4)
     selected_forecast_date = pd.Timestamp(control_col_1.selectbox(
         "Forecast date", available_dates, index=len(available_dates) - 1,
         format_func=lambda value: pd.Timestamp(value).strftime("%d %B %Y"),
@@ -470,6 +470,17 @@ with future_tab:
     )
     model_view = control_col_3.radio(
         "Forecast view", ["Selected method", "Compare all methods"], horizontal=True
+    )
+    overload_threshold_mw = control_col_4.number_input(
+        "Demonstration overload threshold (MW)",
+        min_value=0.01,
+        value=1.00,
+        step=0.05,
+        format="%.2f",
+        help=(
+            "Enter an approved equipment limit when available. Otherwise this "
+            "value is only a demonstration threshold."
+        ),
     )
     feeders_to_plot = (
         [selected_feeder]
@@ -534,12 +545,57 @@ with future_tab:
         selected_curve = displayed_predictions.loc[
             displayed_predictions["Method"] == selected_model_name
         ].head(24)
+    selected_curve = selected_curve.copy()
+    selected_curve["Utilization (%)"] = (
+        selected_curve["Forecast MW"] / overload_threshold_mw * 100
+    )
+    selected_curve["Load status"] = np.select(
+        [
+            selected_curve["Utilization (%)"] > 100,
+            selected_curve["Utilization (%)"] >= 80,
+        ],
+        ["Overload", "Warning"],
+        default="Normal",
+    )
+    overload_rows = selected_curve.loc[selected_curve["Load status"] == "Overload"]
+    warning_rows = selected_curve.loc[selected_curve["Load status"] == "Warning"]
+    maximum_utilization = selected_curve["Utilization (%)"].max()
+    if maximum_utilization > 100:
+        daily_load_status = "Overload"
+    elif maximum_utilization >= 80:
+        daily_load_status = "Warning"
+    else:
+        daily_load_status = "Normal"
+
     metric_col_1, metric_col_2, metric_col_3, metric_col_4 = st.columns(4)
     metric_col_1.metric("Average forecast", f"{selected_curve['Forecast MW'].mean():.3f} MW")
     metric_col_2.metric("Minimum forecast", f"{selected_curve['Forecast MW'].min():.3f} MW")
     metric_col_3.metric("Peak forecast", f"{selected_curve['Forecast MW'].max():.3f} MW")
     peak_row = selected_curve.loc[selected_curve["Forecast MW"].idxmax()]
     metric_col_4.metric("Expected peak hour", peak_row["timestamp"].strftime("%H:%M"))
+
+    st.markdown("#### Overload indication for the selected method")
+    overload_col_1, overload_col_2, overload_col_3, overload_col_4 = st.columns(4)
+    overload_col_1.metric("Daily load status", daily_load_status)
+    overload_col_2.metric("Peak utilization", f"{maximum_utilization:.1f}%")
+    overload_col_3.metric("Warning hours", len(warning_rows))
+    overload_col_4.metric("Overload hours", len(overload_rows))
+    if not overload_rows.empty:
+        first_overload_time = overload_rows.iloc[0]["timestamp"].strftime("%H:%M")
+        st.error(
+            f"Forecast overload begins at {first_overload_time}. The selected "
+            f"forecast exceeds the {overload_threshold_mw:.2f} MW demonstration threshold."
+        )
+    elif not warning_rows.empty:
+        st.warning(
+            "The forecast enters the warning zone at or above 80% of the entered threshold."
+        )
+    else:
+        st.success("The selected forecast remains below 80% of the entered threshold.")
+    st.caption(
+        "This is a user-entered demonstration threshold. It represents verified "
+        "equipment capacity only when an approved operational rating is entered."
+    )
 
     forecast_figure = go.Figure()
     method_colors = {
@@ -571,6 +627,34 @@ with future_tab:
         mode="markers+text", marker=dict(size=12, color=COLORS["red"], symbol="diamond"),
         text=[f"Peak {peak_row['Forecast MW']:.3f} MW"], textposition="top center", hoverinfo="skip",
     ))
+    forecast_figure.add_hline(
+        y=overload_threshold_mw,
+        line_color=COLORS["red"],
+        line_dash="dash",
+        line_width=2,
+        annotation_text=f"Overload threshold {overload_threshold_mw:.2f} MW",
+        annotation_position="top right",
+    )
+    forecast_figure.add_hline(
+        y=overload_threshold_mw * 0.80,
+        line_color=COLORS["orange"],
+        line_dash="dot",
+        line_width=1.5,
+        annotation_text="Warning level 80%",
+        annotation_position="bottom right",
+    )
+    if not overload_rows.empty:
+        forecast_figure.add_trace(go.Scatter(
+            x=overload_rows["timestamp"],
+            y=overload_rows["Forecast MW"],
+            name="Overload hour",
+            mode="markers",
+            marker=dict(size=11, color=COLORS["red"], symbol="x"),
+            hovertemplate=(
+                "%{x|%H:%M}<br>Forecast: %{y:.3f} MW"
+                "<br>Status: Overload<extra></extra>"
+            ),
+        ))
     holiday_names = displayed_predictions["holiday_name"].dropna().unique()
     if len(holiday_names):
         forecast_figure.add_annotation(
@@ -643,6 +727,28 @@ with future_tab:
         how="left",
         validate="one_to_one",
     )
+    hourly_status = displayed_predictions.loc[
+        displayed_predictions["Method"] == selected_model_name,
+        ["timestamp", "Feeder Name", "Forecast MW"],
+    ].copy()
+    hourly_status["Utilization (%)"] = (
+        hourly_status["Forecast MW"] / overload_threshold_mw * 100
+    )
+    hourly_status["Load status"] = np.select(
+        [
+            hourly_status["Utilization (%)"] > 100,
+            hourly_status["Utilization (%)"] >= 80,
+        ],
+        ["Overload", "Warning"],
+        default="Normal",
+    )
+    hourly_status = hourly_status.drop(columns="Forecast MW")
+    hourly_forecast_table = hourly_forecast_table.merge(
+        hourly_status,
+        on=["timestamp", "Feeder Name"],
+        how="left",
+        validate="one_to_one",
+    )
     hourly_forecast_table.insert(
         0, "Hour", hourly_forecast_table["timestamp"].dt.strftime("%H:%M")
     )
@@ -661,16 +767,33 @@ with future_tab:
     hourly_forecast_table = hourly_forecast_table[
         ["Hour", "Load point"]
         + hourly_model_columns
-        + ["Temperature (°C)", "Humidity (%)"]
+        + ["Utilization (%)", "Load status", "Temperature (°C)", "Humidity (%)"]
     ]
     hourly_table_styler = (
         base_table_style(hourly_forecast_table)
-        .format({column: "{:.4f}" for column in hourly_model_columns})
+        .format(
+            {
+                **{column: "{:.4f}" for column in hourly_model_columns},
+                "Utilization (%)": "{:.1f}%",
+            }
+        )
         .background_gradient(
             cmap="Blues",
             subset=hourly_model_columns,
             low=0.05,
             high=0.6,
+        )
+        .map(
+            lambda value: (
+                "background-color:#FDE2E2;color:#A12B2B;font-weight:700"
+                if value == "Overload"
+                else (
+                    "background-color:#FFF0D2;color:#8A5700;font-weight:700"
+                    if value == "Warning"
+                    else "background-color:#DDF4E8;color:#146B46;font-weight:700"
+                )
+            ),
+            subset=["Load status"],
         )
     )
     st.dataframe(
