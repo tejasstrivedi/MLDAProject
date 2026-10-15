@@ -31,12 +31,71 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .stApp {background: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 34%);}
-    [data-testid="stSidebar"] {background: #EEF5F9;}
+    :root {
+        color-scheme: light;
+        --app-navy: #12304A;
+        --app-text: #19384D;
+        --app-muted: #526B7A;
+        --app-border: #D7E5ED;
+        --app-surface: #FFFFFF;
+        --app-soft: #EAF2F7;
+    }
+    html, body, .stApp {
+        background-color: #F7FAFC;
+        color: var(--app-text);
+    }
+    .stApp {
+        background: linear-gradient(180deg, #F5F9FC 0%, #FFFFFF 34%);
+    }
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"] {
+        background: transparent;
+        color: var(--app-text);
+    }
+    [data-testid="stSidebar"],
+    [data-testid="stSidebar"] > div:first-child {
+        background: #EEF5F9;
+        color: var(--app-text);
+    }
+    .stApp h1, .stApp h2, .stApp h3,
+    .stApp h4, .stApp h5, .stApp h6,
+    .stApp p, .stApp label {
+        color: var(--app-text);
+    }
     .hero {padding:1.35rem 1.6rem;border-radius:18px;background:linear-gradient(120deg,#12304A 0%,#176B87 58%,#20A4B8 100%);color:white;margin-bottom:1rem;box-shadow:0 8px 24px rgba(18,48,74,.16);}
-    .hero h1 {margin:0;font-size:2rem;color:white;}.hero p {margin:.35rem 0 0;opacity:.92;}
-    .note-card {background:white;border:1px solid #DCE8EF;border-left:5px solid #20A4B8;border-radius:12px;padding:.8rem 1rem;margin:.4rem 0 1rem;}
-    div[data-testid="stMetric"] {background:rgba(255,255,255,.88);border:1px solid #DCE8EF;border-radius:14px;padding:.75rem 1rem;box-shadow:0 4px 14px rgba(18,48,74,.06);}
+    .hero h1 {margin:0;font-size:2rem;color:#FFFFFF !important;}.hero p {margin:.35rem 0 0;opacity:.92;color:#FFFFFF !important;}
+    .note-card {background:#FFFFFF;color:var(--app-text);border:1px solid #DCE8EF;border-left:5px solid #20A4B8;border-radius:12px;padding:.8rem 1rem;margin:.4rem 0 1rem;}
+    div[data-testid="stMetric"] {background:#FFFFFF;border:1px solid #DCE8EF;border-radius:14px;padding:.75rem 1rem;box-shadow:0 4px 14px rgba(18,48,74,.06);}
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+    div[data-testid="stMetric"] [data-testid="stMetricValue"],
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+        color: var(--app-text);
+    }
+    [data-baseweb="select"] > div,
+    [data-baseweb="input"] > div,
+    [data-baseweb="base-input"],
+    [data-baseweb="textarea"] {
+        background-color: #FFFFFF;
+        color: var(--app-text);
+        border-color: var(--app-border);
+    }
+    [data-baseweb="select"] input,
+    [data-baseweb="input"] input,
+    [data-baseweb="base-input"] input,
+    [data-baseweb="textarea"] textarea {
+        color: var(--app-text);
+        caret-color: var(--app-text);
+    }
+    [data-baseweb="popover"],
+    [data-baseweb="menu"],
+    [role="listbox"] {
+        background-color: #FFFFFF;
+        color: var(--app-text);
+    }
+    [data-baseweb="menu"] li,
+    [role="option"] {
+        color: var(--app-text);
+    }
     div[data-testid="stDataFrame"] {
         border: 1px solid #D7E5ED;
         border-radius: 13px;
@@ -62,7 +121,12 @@ st.markdown(
         background: #FFFFFF;
         color: #29465B;
         font-weight: 650;
+        white-space: nowrap;
         transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+    .stTabs [data-baseweb="tab"] p,
+    .stTabs [data-baseweb="tab"] span {
+        color: #29465B !important;
     }
     .stTabs [data-baseweb="tab"]:hover {
         background: #DDECF4;
@@ -78,6 +142,21 @@ st.markdown(
         color: #FFFFFF !important;
         font-weight: 750;
     }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] span {
+        color: #FFFFFF !important;
+    }
+    button[kind="primary"] {
+        background-color: #176B87;
+        border-color: #176B87;
+        color: #FFFFFF;
+    }
+    button[kind="primary"] p {color:#FFFFFF !important;}
+    button[kind="secondary"] {
+        background-color: #FFFFFF;
+        border-color: #AFC8D7;
+        color: var(--app-text);
+    }
+    button[kind="secondary"] p {color:var(--app-text) !important;}
     .stTabs [data-baseweb="tab-highlight"] {display: none;}
     @media (max-width: 900px) {
         .block-container {padding-left: 1rem; padding-right: 1rem;}
@@ -257,11 +336,14 @@ def regression_metrics(actual: np.ndarray, predicted: np.ndarray) -> dict:
 def style_figure(figure: go.Figure, title: str, y_title: str) -> go.Figure:
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left", "y": 0.98}, height=500,
-        margin=dict(l=20, r=20, t=125, b=20), paper_bgcolor="rgba(0,0,0,0)",
+        template="plotly_white",
+        margin=dict(l=20, r=20, t=125, b=20), paper_bgcolor="#FFFFFF",
         plot_bgcolor="#FFFFFF", hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.16, x=0),
-        xaxis=dict(title="Hour", gridcolor="#E8EEF2"),
-        yaxis=dict(title=y_title, gridcolor="#E8EEF2"),
+        font=dict(family="Arial, sans-serif", color="#19384D"),
+        title_font=dict(color="#12304A"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.16, x=0, font=dict(color="#19384D")),
+        xaxis=dict(title="Hour", gridcolor="#E8EEF2", linecolor="#B9CBD6", tickfont=dict(color="#19384D")),
+        yaxis=dict(title=y_title, gridcolor="#E8EEF2", linecolor="#B9CBD6", tickfont=dict(color="#19384D")),
     )
     return figure
 
